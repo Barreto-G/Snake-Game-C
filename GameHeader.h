@@ -14,7 +14,8 @@ struct node
 	struct node 	*prev;
 };
 enum dir{ RIGHT = 0 , LEFT = 1, UP = 2 , DOWN = 3 };
-typedef enum {FALSE = 0 , TRUE = 1} bool_t;
+
+typedef enum { FALSE = 0 , TRUE = 1} bool_t;
 
 ///VARIABLE DECLARATION
 	struct node 	*head = NULL;

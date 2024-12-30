@@ -8,6 +8,9 @@
 
 #include "GameHeader.h"
 
+#define NUM_BLOCKS 6		// Numero de blocos fixo em 6
+int blocks[NUM_BLOCKS][2]; // Guarda as posicoes dos blocos no inicio no inicio de cada partida
+
 void helpDisplay()
 {
 	system("clear");
@@ -47,61 +50,93 @@ void quit()
 	exit(0);
 }
 
+void generateBlocks() {	// Gera 6 blocos em posicoes aleatorias dentro do tamanho da tela
+    srand(time(0));
+    for (int i = 0; i < NUM_BLOCKS; i++) {
+        blocks[i][0] = (rand() % 628) + 6; // X 
+        blocks[i][1] = (rand() % 468) + 6; // Y 
+    }
+}
+
+void drawBlocks() {	// Desenha os blocos nas posicoes
+    glColor3f(1.0, 0.0, 0.0);	// Blocos vermelhos
+	for (int i = 0; i < NUM_BLOCKS; i++) {
+        drawCell(blocks[i][0], blocks[i][1]);
+    }
+	glColor3f(0.0, 0.0, 0.0);	// Volta pra preto
+}
+
+bool_t checkBlockCollision(int x, int y) {	// Checa se a cobra colidiu com algum bloco
+    for (int i = 0; i < NUM_BLOCKS; i++) {
+        if (checkEqualNode(x, y, blocks[i][0], blocks[i][1])) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void myinit(void)
 {
 	glPointSize(4.0);
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	gluOrtho2D(0.0, 640.0, 0.0, 480.0);
-	glClearColor(0.127, 0.252, 0.0, 0.0);
-	initGame();
-	play = TRUE;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0, 640.0, 0.0, 480.0);
+    glClearColor(0.127, 0.252, 0.0, 0.0);
+    initGame();
+    generateBlocks(); // Generate blocks at initialization
+    play = TRUE;
 }
 
 void moveSnake(void)
 {	
 	int move_x = change -> prev -> x + change_x;
 	int move_y = change -> prev -> y + change_y;
-	if( (move_x >= 640 ) || ( move_y >= 480) || ( move_x <= 0 ) || ( move_y <= 0 ) || search(move_x , move_y) )
-			out();
-	else
-	{
-		if(checkEqualNode(move_x , move_y , food_x , food_y))
-		{
-			addNode(change);
-			playDisplay();
-			createFood();	
-		}	
+	// Wrap-around logic
+    if (move_x >= 640) move_x = 0;
+    else if (move_x < 0) move_x = 639;
 
-		change -> x  =  move_x;
-		change -> y  =  move_y;
+    if (move_y >= 480) move_y = 0;
+    else if (move_y < 0) move_y = 479;
 
-		drawSnake();
-		drawHead( change -> x , change -> y);
-		displayFood();
+    // Check collisions
+    if (search(move_x, move_y) || checkBlockCollision(move_x, move_y)) {
+        out();
+    } else {
+        if (checkEqualNode(move_x, move_y, food_x, food_y)) {
+            addNode(change);
+            playDisplay();
+            createFood();
+        }
 
-		glFlush();	
-		wait_for_time(speed);
+        change->x = move_x;
+        change->y = move_y;
 
-		change = change -> next;	
-		glutPostRedisplay();	
+        glClear(GL_COLOR_BUFFER_BIT);
+        drawSnake();
+        drawHead(change->x, change->y);
+        displayFood();
+        drawBlocks(); // Draw the blocks
+
+        glFlush();
+        wait_for_time(speed);
+
+        change = change->next;
+        glutPostRedisplay();
 	}		
 }
 
 void mydisplay(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
-    glFlush();
-    if(play)
-		moveSnake();
-	else
-	{
-		playDisplay();
-		drawSnake();
-		drawHead( change -> prev -> x , change -> prev -> y );
-		displayFood();
-		glFlush();
-	}
+    if (play) {
+        moveSnake();
+    } else {
+        playDisplay();
+        drawSnake();
+        drawHead(change->prev->x, change->prev->y);
+        displayFood();
+        glFlush();
+    }
 }
 
 void mySpecialKeyboard(int key, int x, int y)
